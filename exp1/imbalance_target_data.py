@@ -54,8 +54,8 @@ def filter_images_custom_ratio(
             f.write(f"{path} {label}\n")
 
 # 使用示例
-input_file = "./txt/target_amazon_opda.txt"  # 输入文件
-output_file = "./txt/target_amazon_imbalance_opda.txt"  # 输出文件
+input_file = "./txt/target_webcam_opda.txt"  # 输入文件
+output_file = "./txt/target_webcam_imbalance_opda.txt"  # 输出文件
 
 # 定义每个类别的采样比例（标签: 比例）
 label_ratio_dict = {str(i):0.1 for i in range(5, 10)}  # 标签5-9保留10%，其余默认全部保留

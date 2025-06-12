@@ -20,6 +20,6 @@ The code is written in Python 3.6 and requires the following packages:
 
 
 针对ACM MM提出的问题进行下面三个实验：
-1. 修改amazon目标域数据集中的样本比例，测试data imbalance的情况
-2. 使用O分类器的输出作为权重，和现有权重做对比，提供理论依据
+1. 修改amazon目标域数据集中的样本比例，测试data imbalance的情况 train.py
+2. 使用O分类器的输出作为权重，和现有权重做对比，提供理论依据 weight_o.py
 3. 修改backbone，改成ViT

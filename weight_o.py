@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from apex import amp, optimizers
 from utils.utils import log_set, save_model
-from utils.loss import ova_loss, open_entropy_wa
+from utils.loss import ova_loss, open_entropy_self
 from utils.lr_schedule import inv_lr_scheduler
 from utils.defaults import get_dataloaders, get_models
 from eval import test
@@ -23,7 +23,7 @@ parser.add_argument('--source_data', type=str,
                     default='./txt/source_dslr_opda.txt',
                     help='path to source list')
 parser.add_argument('--target_data', type=str,
-                    default='./txt/target_amazon_imbalance_opda.txt',
+                    default='./txt/target_amazon_opda.txt',
                     help='path to target list')
 parser.add_argument('--log-interval', type=int,
                     default=100,
@@ -153,7 +153,7 @@ def train():
             with torch.no_grad():
                 out_t = F.softmax(out_t, 1)
                 weight = out_t.detach()
-            ent_open = open_entropy_wa(weight, out_open_t)
+            ent_open = open_entropy_self(out_open_t)
             all += args.multi * ent_open
             log_values.append(ent_open.item())
             log_string += "Loss Open Target: {:.6f}"
