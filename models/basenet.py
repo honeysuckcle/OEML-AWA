@@ -2,6 +2,47 @@ from torchvision import models
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+import timm
+import os
+
+# 设置环境变量
+os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
+os.environ['HF_HUB_URL'] = 'https://hf-mirror.com'
+
+class ViTBase(nn.Module):
+    def __init__(self, option='vit_base_patch16_224', pret=True, top=False):
+        super(ViTBase, self).__init__()
+        self.top = top
+        
+        # ViT 模型配置
+        vit_models = {
+            'vit_tiny_patch16_224': 192,
+            'vit_small_patch32_224': 384,
+            'vit_base_patch16_224': 768,
+            'vit_base_patch16_384': 768,
+            'vit_large_patch16_224': 1024,
+            'vit_large_patch16_384': 1024,
+            'vit_huge_patch14_224': 1280
+        }
+        
+        # 设置默认维度
+        self.dim = vit_models.get(option, 768)
+        
+        # 创建 ViT 模型
+        if option in vit_models:
+            self.features = timm.create_model(
+                option,
+                pretrained=pret,
+                num_classes=0 if not top else 1000  # 控制是否包含分类头
+            )
+        else:
+            raise ValueError(f"Unsupported ViT model: {option}")
+
+    def forward(self, x):
+        # ViT 返回形状: [batch_size, num_patches+1, dim]
+        features = self.features(x)
+        return features
+
 
 
 class ResBase(nn.Module):

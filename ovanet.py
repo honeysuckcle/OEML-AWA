@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from apex import amp, optimizers
 from utils.utils import log_set, save_model
-from utils.loss import ova_loss, open_entropy_wa
+from utils.loss import ova_loss, open_entropy
 from utils.lr_schedule import inv_lr_scheduler
 from utils.defaults import get_dataloaders, get_models
 from eval import test
@@ -23,7 +23,7 @@ parser.add_argument('--source_data', type=str,
                     default='./txt/source_dslr_opda.txt',
                     help='path to source list')
 parser.add_argument('--target_data', type=str,
-                    default='./txt/target_amazon_imbalance_opda.txt',
+                    default='./txt/target_amazon_opda.txt',
                     help='path to target list')
 parser.add_argument('--log-interval', type=int,
                     default=100,
@@ -49,19 +49,15 @@ parser.add_argument("--save_path", type=str,
 parser.add_argument('--multi', type=float,
                     default=0.1,
                     help='weight factor for adaptation')
-parser.add_argument('--logit_norm', type=float,
-                    default=0.1,
-                    help='use logitNorm')
 args = parser.parse_args()
 
 config_file = args.config
-conf = yaml.load(open(config_file), Loader=yaml.SafeLoader)
-save_config = yaml.load(open(config_file), Loader=yaml.SafeLoader)
+conf = yaml.load(open(config_file))
+save_config = yaml.load(open(config_file))
 conf = easydict.EasyDict(conf)
 gpu_devices = ','.join([str(id) for id in args.gpu_devices])
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_devices
 args.cuda = torch.cuda.is_available()
-logit_norm = args.logit_norm
 
 source_data = args.source_data
 target_data = args.target_data
@@ -81,7 +77,6 @@ inputs["conf"] = conf
 inputs["script_name"] = script_name
 inputs["num_class"] = num_class
 inputs["config_file"] = config_file
-inputs["logit_norm"] = logit_norm
 
 source_loader, target_loader, \
 test_loader, target_folder = get_dataloaders(inputs)
@@ -147,20 +142,14 @@ def train():
         log_values = [step, conf.train.min_step,
                       loss_s.item(),  loss_open.item(),
                       open_loss_pos.item(), open_loss_neg.item()]
-        
         if not args.no_adapt:
             feat_t = G(img_t)
-            out_t = C1(feat_t)
             out_open_t = C2(feat_t)
             out_open_t = out_open_t.view(img_t.size(0), 2, -1)
-            with torch.no_grad():
-                out_t = F.softmax(out_t, 1)
-                weight = out_t.detach()
-            ent_open = open_entropy_wa(weight, out_open_t)
+            ent_open = open_entropy(out_open_t)
             all += args.multi * ent_open
             log_values.append(ent_open.item())
             log_string += "Loss Open Target: {:.6f}"
-
         with amp.scale_loss(all, [opt_g, opt_c]) as scaled_loss:
             scaled_loss.backward()
         opt_g.step()
